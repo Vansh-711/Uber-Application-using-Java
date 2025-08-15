@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ola Maps Polyline</title>
+    <script src="https://www.unpkg.com/olamaps-web-sdk@latest/dist/olamaps-web-sdk.umd.js"></script>
+
+    <style>
+        /* Removes default margin from the page */
+        body { margin: 0; padding: 0; }
+        /* Makes the map container fill the entire screen */
+        #map { height: 100vh; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    // 1. Initialize Ola Maps with your API Key
+    const olaMaps = new OlaMaps({
+        // IMPORTANT: Replace this with your actual Ola Maps API key
+        apiKey: "Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
+    });
+
+    // 2. Create the map instance
+    const myMap = olaMaps.init({
+        style: "https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json",
+        container: 'map',
+        // Centered coordinates to view the entire line
+        center: [76.533575, 21.049776],
+        // Adjusted zoom level to fit the line
+        zoom: 11
+    });
+
+    // 3. Wait for the map to load before adding the line
+    myMap.on('load', () => {
+        // Adds the GeoJSON data source for the line
+        myMap.addSource('route', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    // Your new coordinates are here
+                    'coordinates': [
+                        [72.486814, 22.98988],
+                        [72.48681, 22.98988],
+                        [72.48852, 22.99165],
+                        [72.48861, 22.99163],
+                        [72.48911, 22.98724],
+                        [72.49457, 22.98714],
+                        [72.49505, 22.98712],
+                        [72.50192, 22.98713],
+                        [72.53772, 22.99648],
+                        [72.5509, 23.00258],
+                        [72.56108, 23.0087],
+                        [72.56232, 23.00974],
+                        [72.56439, 23.01045],
+                        [72.56442, 23.01051],
+                        [72.56453, 23.01047],
+                        [72.56908, 23.01234],
+                        [72.57193, 23.01173],
+                        [72.57794, 23.01072],
+                        [72.584, 23.01108],
+                        [72.59239, 23.01488],
+                        [72.59278, 23.01678],
+                        [72.5988, 23.02329],
+                        [72.60011, 23.02788],
+                        [72.59878, 23.03117],
+                        [72.60026, 23.0285],
+                    ]
+                }
+            }
+        });
+
+        // Adds the layer to style and display the line on the map
+        myMap.addLayer({
+            'id': 'route',
+            'type': 'line',
+            'source': 'route', // Links to the 'route' source above
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#f00', // Line color (red)
+                'line-width': 4     // Line width in pixels
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

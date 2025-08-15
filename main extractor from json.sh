@@ -1,0 +1,1 @@
+jq -r '.. | .start_location? | select(.lat and .lng) | "\(.lat),\(.lng)"' input.json > output.txt
