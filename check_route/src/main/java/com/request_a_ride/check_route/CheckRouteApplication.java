@@ -39,12 +39,21 @@ public class CheckRouteApplication{
         BufferedReader jsonOutput_drop_down_br = new BufferedReader(new InputStreamReader(get_drop_down_coor.getInputStream()));
 
         String pick_up_raw_line = jsonOutput_pick_up_br.readLine();
+        String drop_down_raw_line = jsonOutput_drop_down_br.readLine();
+
         while(pick_up_raw_line != null){
             jsonOutput_pick_up_bw.write(pick_up_raw_line);
             jsonOutput_pick_up_bw.newLine();
             pick_up_raw_line = jsonOutput_pick_up_br.readLine();
         }
-        jsonOutput_pick_up_bw.flush();
+        jsonOutput_pick_up_bw.close();
+
+        while(drop_down_raw_line != null){
+            jsonOutput_drop_down_bw.write(drop_down_raw_line);
+            jsonOutput_drop_down_bw.newLine();
+            drop_down_raw_line = jsonOutput_drop_down_br.readLine();
+        }
+        jsonOutput_drop_down_bw.close();
 
         //running the terminal command that will extract the needed coordinates from the whole json file and store it into another text file
         Process pick_up_coordinates = new ProcessBuilder(
@@ -53,10 +62,13 @@ public class CheckRouteApplication{
                 "jq -r '.geocodingResults[0].geometry.location | \"[\\(.lng), \\(.lat)],\"' pick_up_raw_json.txt > pick_up_coordinates.txt"
         ).start();
 
+        Process drop_down_coordinates = new ProcessBuilder(
+                "bash",
+                "-c",
+                "jq -r '.geocodingResults[0].geometry.location | \"[\\(.lng), \\(.lat)],\"' drop_down_raw_json.txt > drop_down_coordinates.txt"
+        ).start();
 
-
-
-
+        //now we have the files named pick_up_coordinates and drop_down_coordinates. Now we will pass this coordinates through routing directions api and get the raw json of path
 
 
 
