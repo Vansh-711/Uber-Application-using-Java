@@ -100,14 +100,15 @@ public class CheckRouteApplication{
         Process direction_raw_to_formatted = new ProcessBuilder(
                 "bash",
                 "-c",
-                "jq -r '.. | .start_location? | select(.lat and .lng) | \"\\(.lat),\\(.lng)\"' directions_raw.txt > direction_coordinates.txt"
+//                "jq -r '.. | .start_location? | select(.lat and .lng) | \"\\(.lat),\\(.lng)\"' directions_raw.txt > direction_coordinates.txt"
+                "jq -r '[.. | .start_location? | select(.lat and .lng) | [.lng, .lat]] \n" +
+                        "       | \"const routeCoordinates = \\(.);\"' directions_raw.txt > /Users/vansh/Desktop/UBER/check_route/src/main/resources/static/direction_coordinates.js\n"
         ).start();
-
-
-
+//        //now we have two files out of which one is imp that is directions_coordinates.txt. now we will paste that file content into the html file and done.
+//        BufferedReader direction_coordinates_br = new BufferedReader(new FileReader("direction_coordinates.txt"));
+//        BufferedWriter check_route_html_bw = new BufferedWriter(new FileWriter("check_route.html"));
 
 		SpringApplication.run(CheckRouteApplication.class, args);
-
         Process process = new ProcessBuilder("open" , "http://localhost:8080/").start();
 	}
 }
