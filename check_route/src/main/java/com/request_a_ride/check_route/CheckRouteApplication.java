@@ -59,16 +59,49 @@ public class CheckRouteApplication{
         Process pick_up_coordinates = new ProcessBuilder(
                 "bash",
                 "-c",
-                "jq -r '.geocodingResults[0].geometry.location | \"[\\(.lng), \\(.lat)],\"' pick_up_raw_json.txt > pick_up_coordinates.txt"
+                "jq -r '.geocodingResults[0].geometry.location | \"\\(.lat)%2C\\(.lng)\"' pick_up_raw_json.txt > pick_up_coordinates.txt"
         ).start();
 
         Process drop_down_coordinates = new ProcessBuilder(
                 "bash",
                 "-c",
-                "jq -r '.geocodingResults[0].geometry.location | \"[\\(.lng), \\(.lat)],\"' drop_down_raw_json.txt > drop_down_coordinates.txt"
+                "jq -r '.geocodingResults[0].geometry.location | \"\\(.lat)%2C\\(.lng)\"' drop_down_raw_json.txt > drop_down_coordinates.txt"
         ).start();
 
+        Thread.sleep(1500);
+
         //now we have the files named pick_up_coordinates and drop_down_coordinates. Now we will pass this coordinates through routing directions api and get the raw json of path
+        BufferedReader pick_up_coordinates_br = new BufferedReader(new FileReader("pick_up_coordinates.txt"));
+        BufferedReader drop_down_coordinates_br = new BufferedReader(new FileReader("drop_down_coordinates.txt"));
+
+        String pick_up_coordinate_string = pick_up_coordinates_br.readLine();
+        String drop_down_coordinate_string = drop_down_coordinates_br.readLine();
+
+        Process directions_api_curl = new ProcessBuilder(
+                "curl",
+                "https://api.olamaps.io/routing/v1/directions?origin=" + pick_up_coordinate_string + "&destination=" + drop_down_coordinate_string + "&mode=driving&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn",
+                "--request", "POST"
+        ).start();
+
+        //writing the raw json into txt file
+
+        BufferedReader jsonOutput_directions_br = new BufferedReader(new InputStreamReader(directions_api_curl.getInputStream()));
+        BufferedWriter jsonOutput_direction_bw = new BufferedWriter(new FileWriter("directions_raw.txt"));
+
+        String direction_raw_line = jsonOutput_directions_br.readLine();
+        while(direction_raw_line != null){
+            jsonOutput_direction_bw.write(direction_raw_line);
+            jsonOutput_direction_bw.newLine();
+            direction_raw_line = jsonOutput_directions_br.readLine();
+        }
+        jsonOutput_direction_bw.close();
+
+        //running the terminal command that will turn the jsonOutput_direction raw into just lat,lng format
+        Process direction_raw_to_formatted = new ProcessBuilder(
+                "bash",
+                "-c",
+                "jq -r '.. | .start_location? | select(.lat and .lng) | \"\\(.lat),\\(.lng)\"' directions_raw.txt > direction_coordinates.txt"
+        ).start();
 
 
 
