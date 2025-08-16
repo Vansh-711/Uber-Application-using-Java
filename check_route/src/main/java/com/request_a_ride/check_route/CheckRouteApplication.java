@@ -21,10 +21,10 @@ public class CheckRouteApplication{
         String drop_down_name = drop_down.replaceAll("\\s+" , "%20");
 
         ProcessBuilder pb_pick_up = new ProcessBuilder(
-                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + pick_up_name + "&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
+                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + pick_up_name + "&api_key=___api_key___"
         );
         ProcessBuilder pb_drop_down = new ProcessBuilder(
-                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + drop_down_name + "&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
+                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + drop_down_name + "&api_key=___api_key___"
         );
 
         Process get_pick_up_coor = pb_pick_up.start();
@@ -79,7 +79,7 @@ public class CheckRouteApplication{
 
         Process directions_api_curl = new ProcessBuilder(
                 "curl",
-                "https://api.olamaps.io/routing/v1/directions?origin=" + pick_up_coordinate_string + "&destination=" + drop_down_coordinate_string + "&mode=driving&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn",
+                "https://api.olamaps.io/routing/v1/directions?origin=" + pick_up_coordinate_string + "&destination=" + drop_down_coordinate_string + "&mode=driving&api_key=___api_key___",
                 "--request", "POST"
         ).start();
 
