@@ -21,10 +21,10 @@ public class CheckRouteApplication{
         String drop_down_name = drop_down.replaceAll("\\s+" , "%20");
 
         ProcessBuilder pb_pick_up = new ProcessBuilder(
-                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + pick_up_name + "&api_key=___api_key___"
+                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + pick_up_name + "&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
         );
         ProcessBuilder pb_drop_down = new ProcessBuilder(
-                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + drop_down_name + "&api_key=___api_key___"
+                "curl" , "https://api.olamaps.io/places/v1/geocode?address=" + drop_down_name + "&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
         );
 
         Process get_pick_up_coor = pb_pick_up.start();
@@ -79,7 +79,7 @@ public class CheckRouteApplication{
 
         Process directions_api_curl = new ProcessBuilder(
                 "curl",
-                "https://api.olamaps.io/routing/v1/directions?origin=" + pick_up_coordinate_string + "&destination=" + drop_down_coordinate_string + "&mode=driving&api_key=___api_key___",
+                "https://api.olamaps.io/routing/v1/directions?origin=" + pick_up_coordinate_string + "&destination=" + drop_down_coordinate_string + "&mode=driving&api_key=Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn",
                 "--request", "POST"
         ).start();
 
@@ -102,11 +102,8 @@ public class CheckRouteApplication{
                 "-c",
 //                "jq -r '.. | .start_location? | select(.lat and .lng) | \"\\(.lat),\\(.lng)\"' directions_raw.txt > direction_coordinates.txt"
                 "jq -r '[.. | .start_location? | select(.lat and .lng) | [.lng, .lat]] \n" +
-                        "       | \"const routeCoordinates = \\(.);\"' directions_raw.txt > /Users/vansh/Desktop/UBER/check_route/src/main/resources/static/direction_coordinates.js\n"
+                        "| \"const routeCoordinates = \\(.);\"' directions_raw.txt > /Users/vansh/Desktop/UBER/check_route/src/main/resources/static/direction_coordinates.js\n"
         ).start();
-//        //now we have two files out of which one is imp that is directions_coordinates.txt. now we will paste that file content into the html file and done.
-//        BufferedReader direction_coordinates_br = new BufferedReader(new FileReader("direction_coordinates.txt"));
-//        BufferedWriter check_route_html_bw = new BufferedWriter(new FileWriter("check_route.html"));
 
 		SpringApplication.run(CheckRouteApplication.class, args);
         Process process = new ProcessBuilder("open" , "http://localhost:8080/").start();

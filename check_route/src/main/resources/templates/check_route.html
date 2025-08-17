@@ -26,7 +26,7 @@
 
     // 2. Create the map instance
     const myMap = olaMaps.init({
-        style: "https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json",
+        style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
         container: 'map',
         // Centered coordinates to view the entire line
         center: [76.533575, 21.049776],
@@ -63,6 +63,58 @@
                 'line-color': '#f00', // Line color (red)
                 'line-width': 4     // Line width in pixels
             }
+        });
+
+        // 4. Adding markers of start location and text message
+
+        const startCoordinate = routeCoordinates[0];
+        const endCoordinate = routeCoordinates[routeCoordinates.length - 1];
+
+        // popup for start
+        const startPopup = olaMaps
+            .addPopup({
+                offset: [0, -15],
+                anchor: 'bottom'
+            })
+            .setText('Start Location');
+
+        // popup for end
+        const endPopup = olaMaps
+            .addPopup({
+                offset: [0, -15],
+                anchor: 'bottom'
+            })
+            .setText('End Location');
+
+        //start marker
+        const startMarker = olaMaps
+            .addMarker({
+                offset: [0, -10],
+                anchor: 'bottom',
+                color: 'green'
+            })
+            .setLngLat(startCoordinate)
+            .setPopup(startPopup)
+            .addTo(myMap);
+
+        // end marker
+        const endMarker = olaMaps
+            .addMarker({
+                offset: [0, -10],
+                anchor: 'bottom',
+                color: 'red'
+            })
+            .setLngLat(endCoordinate)
+            .setPopup(endPopup)
+            .addTo(myMap);
+
+        // click event listeners to show text when markers are clicked
+        startMarker.on('click', () => {
+            startPopup.addTo(myMap);
+        });
+
+        endMarker.on('click', () => {
+            endPopup.addTo(myMap);
         });
     });
 </script>
