@@ -105,7 +105,7 @@ public class CheckRouteApplication{
                         "| \"const routeCoordinates = \\(.);\"' directions_raw.txt > /Users/vansh/Desktop/UBER/check_route/src/main/resources/static/direction_coordinates.js\n"
         ).start();
 
-		SpringApplication.run(CheckRouteApplication.class, args);
+        SpringApplication.run(CheckRouteApplication.class, args);
         Process process = new ProcessBuilder("open" , "http://localhost:8080/").start();
 	}
 }

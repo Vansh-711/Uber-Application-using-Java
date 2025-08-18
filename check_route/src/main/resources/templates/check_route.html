@@ -54,14 +54,14 @@
         myMap.addLayer({
             'id': 'route',
             'type': 'line',
-            'source': 'route', // Links to the 'route' source above
+            'source': 'route',
             'layout': {
                 'line-join': 'round',
                 'line-cap': 'round'
             },
             'paint': {
-                'line-color': '#f00', // Line color (red)
-                'line-width': 4     // Line width in pixels
+                'line-color': '#f00',
+                'line-width': 4
             }
         });
 
@@ -108,7 +108,7 @@
             .setPopup(endPopup)
             .addTo(myMap);
 
-        // click event listeners to show text when markers are clicked
+        // click event listeners
         startMarker.on('click', () => {
             startPopup.addTo(myMap);
         });

@@ -8,5 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="check_route" />
+    <orderEntry type="library" name="Maven: ch.hsr:geohash:1.4.0" level="project" />
   </component>
 </module>
