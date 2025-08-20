@@ -4,6 +4,7 @@ public class main_menu{
         Scanner scn = new Scanner(System.in);
         boolean main_menu_repeat = true;
         while(main_menu_repeat) {
+            System.out.println("Welcome to Uber Application");
             System.out.println("1 : Request a ride");
             System.out.println("2 : Exit");
             System.out.print("Enter choice : ");

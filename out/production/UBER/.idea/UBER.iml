@@ -10,5 +10,14 @@
     <orderEntry type="module" module-name="check_route" />
     <orderEntry type="library" name="Maven: ch.hsr:geohash:1.4.0" level="project" />
     <orderEntry type="library" name="Maven: com.uber:h3:4.1.1" level="project" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$USER_HOME$/Documents/JDBC/mysql-connector-j-9.4.0/mysql-connector-j-9.4.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
