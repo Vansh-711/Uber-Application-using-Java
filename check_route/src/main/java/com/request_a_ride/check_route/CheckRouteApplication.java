@@ -97,6 +97,7 @@ public class CheckRouteApplication{
         jsonOutput_direction_bw.close();
 
         //running the terminal command that will turn the jsonOutput_direction raw into just lat,lng format
+        new File("direction_coordinates.js").delete();
         Process direction_raw_to_formatted = new ProcessBuilder(
                 "bash",
                 "-c",
@@ -105,7 +106,11 @@ public class CheckRouteApplication{
                         "| \"const routeCoordinates = \\(.);\"' directions_raw.txt > /Users/vansh/Desktop/UBER/check_route/src/main/resources/static/direction_coordinates.js\n"
         ).start();
 
+        direction_raw_to_formatted.waitFor();
+//        Thread.sleep(1500);
+
         SpringApplication.run(CheckRouteApplication.class, args);
+        Thread.sleep(1500);
         Process process = new ProcessBuilder("open" , "http://localhost:8080/").start();
 	}
 }

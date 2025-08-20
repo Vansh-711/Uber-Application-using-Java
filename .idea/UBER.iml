@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="check_route" />
     <orderEntry type="library" name="Maven: ch.hsr:geohash:1.4.0" level="project" />
+    <orderEntry type="library" name="Maven: com.uber:h3:4.1.1" level="project" />
   </component>
 </module>
