@@ -5,7 +5,7 @@ import java.sql.Statement;
 import java.util.Scanner;
 
 
-public class sine_up
+public class sign_up
 {
     public static void main(String[] args) throws Exception
     {

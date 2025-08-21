@@ -81,45 +81,75 @@ public class request_a_ride extends Thread{
 
         city_name_bw.write(find_city(h3 , user_h3_index_res6 , hash_map_1));
         city_name_bw.flush();
-        scn.nextLine();
 
         //now we have a file named user_current_city.txt which contains the user current city
 
 
         //2.Finding drivers near user
         //we will have create new hexcode of resolution 7
+        long user_h3_index_res7 = h3.latLngToCell(user_curr_lat , user_curr_lng , 7);// edge length : 1.22062975 km
 
-//        long user_h3_index_res7 = h3.latLngToCell(user_curr_lat , user_curr_lng , 7);// edge length : 1.22062975 km
-//
-//        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
-//        if (con != null)
-//            System.out.println("connection is done ");
-//        else
-//            System.out.println("something else in connection ");
-//
-//
-//        BufferedReader user_city_br = new BufferedReader(new FileReader("user_current_city.txt"));
-//        String user_city = user_city_br.readLine();
-//
-//        String driver_in_user_city_query = "select id , latitude , longitude from drivers where city = ?";
-//        PreparedStatement driver_in_user_city_ps = con.prepareStatement(driver_in_user_city_query);
-//
-//        driver_in_user_city_ps.setString(1 , user_city);
-//
-//        ResultSet driver_in_user_city_result_set = driver_in_user_city_ps.executeQuery();
-//
-//        LinkedList<Integer> drivers_in_user_city_ll = new LinkedList<Integer>();
-//
-//        while(driver_in_user_city_result_set.next()){
-//            int driver_in_user_city_id = driver_in_user_city_result_set.getInt(1);
-//            drivers_in_user_city_ll.push(driver_in_user_city_id);
-//        }
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
+        if (con != null)
+            System.out.println("connection is done ");
+        else
+            System.out.println("something else in connection ");
 
 
-        //now we have a linked list of all the drivers in the city (id)
-        //we will go through them all and give randome position to driver in their city
+        BufferedReader user_city_br = new BufferedReader(new FileReader("user_current_city.txt"));
+        String user_city = user_city_br.readLine();
 
-        //Process driver_in_user_city_pb = new ProcessBuilder("curl \"https://nominatim.openstreetmap.org/search?city=Varanasi&format=json\" | jq").start();
+        String driver_in_user_city_query = "select id , latitude , longitude from drivers where city = ?";
+        PreparedStatement driver_in_user_city_ps = con.prepareStatement(driver_in_user_city_query);
+
+        driver_in_user_city_ps.setString(1 , user_city);
+
+        ResultSet driver_in_user_city_result_set = driver_in_user_city_ps.executeQuery();
+
+        //now we have a result set of all the drivers in the city
+
+        //we will now store this data in our own linked list with complex nodes
+        ll_drivers drivers_in_user_city_ll = new ll_drivers();
+
+        //we will use this later
+
+
+            //now we have a linked list of all the drivers in the city (id)
+            //we will go through them all and give randome position to driver in their city
+
+            ProcessBuilder driver_in_user_city_pb = new ProcessBuilder("bash", "-c",
+                    "curl -s \"https://nominatim.openstreetmap.org/search?city=" + user_city + "&format=json\" | jq -r '.[0].boundingbox | join(\",\")'");
+
+            Process driver_in_user_city_p = driver_in_user_city_pb.start();
+
+            BufferedReader driver_in_user_city_boundary_br = new BufferedReader(new InputStreamReader(driver_in_user_city_p.getInputStream()));
+            String driver_in_user_city_boundary = driver_in_user_city_boundary_br.readLine();
+            //now we have city boundary stored in this string
+
+            driver_in_user_city_p.waitFor();
+
+            //transforming string into arr
+            String[] driver_in_user_city_boundary_arr = driver_in_user_city_boundary.split(",");
+
+            //generating random point
+            double min_lat_user_city = Double.parseDouble(driver_in_user_city_boundary_arr[0]);
+            double max_lat_user_city = Double.parseDouble(driver_in_user_city_boundary_arr[1]);
+            double min_lng_user_city = Double.parseDouble(driver_in_user_city_boundary_arr[2]);
+            double max_lng_user_city = Double.parseDouble(driver_in_user_city_boundary_arr[3]);
+
+            Random rand = new Random();
+
+            double lat = min_lat_user_city + (max_lat_user_city - min_lat_user_city) * rand.nextDouble();
+            double lng = min_lng_user_city + (max_lng_user_city - min_lng_user_city) * rand.nextDouble();
+
+
+        while(driver_in_user_city_result_set.next()){
+            int driver_in_user_city_id = driver_in_user_city_result_set.getInt(1);
+            drivers_in_user_city_ll.push(driver_in_user_city_id , lat , lng);
+        }
+
+        //now we have a linked that contains all the drivers in the city and there random location in the city
+        //we will now use that info and use h3 to find nearby drivers
 
 
 
@@ -133,11 +163,10 @@ public class request_a_ride extends Thread{
 //                }
 //            }
 //        }
-//
+
 //        //making the linked list
 //        LinkedList<Long> driver_in_user_city_hexcode_ll = new LinkedList<Long>();
 //        LinkedList<Integer> driver_in_user_city_id_ll = new LinkedList<Integer>();
-//
 
 
 
@@ -155,5 +184,32 @@ public class request_a_ride extends Thread{
             k++;
         }
         return "City not found";
+    }
+}
+class ll_drivers{
+    ll_nodes head;
+    void push(int id , double lat , double lng){
+        if(head == null){
+            ll_nodes temp = new ll_nodes(id);
+            head = temp;
+        }
+        else{
+            ll_nodes temp = head;
+            while(temp.next != null){
+                temp = temp.next;
+            }
+            ll_nodes neww = new ll_nodes(id);
+            temp.next = neww;
+        }
+    }
+}
+class ll_nodes{
+    ll_nodes next;
+    int id;
+    double random_lat;
+    double random_lng;
+    ll_nodes(){}
+    ll_nodes(int id){
+        this.id = id;
     }
 }

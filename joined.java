@@ -21,7 +21,7 @@ class UberSystem
 
             if (choice.equals("signup"))
             {
-                sine_up.main(args);
+                sign_up.main(args);
                 scn.nextLine();
                 log_in.main(args);
             }
