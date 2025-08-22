@@ -5,26 +5,39 @@ import java.util.Scanner;
 
 public class log_in
 {
+    static Connection con;
+
+    static {
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String[] args) throws Exception
     {
         Scanner scn = new Scanner(System.in);
-        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
 
         if (con != null)
             System.out.println("connection is done ");
         else
             System.out.println("something else in connection ");
 
-        System.out.println("\nWelcome to login menu\n");
+        System.out.println("\nWelcome to Login Menu\n");
+
+        String email_for_otp = "";
+
+        ResultSet rs = null;
         while(true)
         {
             System.out.println("1. phone no \n2. email id ");
-            System.out.print("Enter you choice here : ");
+            System.out.print("Enter your choice : ");
             int x = scn.nextInt();
             scn.nextLine();
             boolean b = false;
 
-            ResultSet rs = null;
+
             switch (x)
             {
                 case 1:
@@ -97,6 +110,7 @@ public class log_in
                     String loginQuery = "SELECT * FROM user_info WHERE email = ?";
                     String loginQuery1 = "SELECT password FROM user_info where email = ? ";
                     ResultSet rs1 = null;
+
                     try
                     {
                         PreparedStatement pst = con.prepareCall(loginQuery1);
@@ -113,22 +127,21 @@ public class log_in
                     {
                         PreparedStatement pst = con.prepareStatement(loginQuery);
                         pst.setString(1, inputEmail);
-
                         rs = pst.executeQuery();
 
                         if (rs.next() && rs1.next() && rs1.getString(1).equals(inputPassword))
                         {
                             System.out.println("Login successful!");
                             System.out.println("User Details:");
-                            System.out.println("ID: " + rs.getInt("id"));
-                            System.out.println("Name: "
+                            System.out.println("    ID: " + rs.getInt("id"));
+                            System.out.println("    Name: "
                                     + rs.getString("first_name") + " "
                                     + rs.getString("middle_name") + " "
                                     + rs.getString("last_name"));
-                            System.out.println("Phone: " + rs.getString("phone"));
-                            System.out.println("Email: " + rs.getString("email"));
-                            System.out.println("Gender: " + rs.getString("gender"));
-                            System.out.println("Age: " + rs.getInt("age"));
+                            System.out.println("    Phone: " + rs.getString("phone"));
+                            System.out.println("    Email: " + rs.getString("email"));
+                            System.out.println("    Gender: " + rs.getString("gender"));
+                            System.out.println("    Age: " + rs.getInt("age"));
                             b = !b;
                             break;
                         }
@@ -149,7 +162,6 @@ public class log_in
                     System.out.println("enter valid input");
                 }
             }
-
 
             if (con == null)
             {
@@ -173,12 +185,8 @@ public class log_in
                         + "user_last_login_date DATE, "
                         + "user_last_login_time TIME)";
 
-                System.out.println("full key is: " + fullKey);
-
                 PreparedStatement pst = con.prepareStatement(que);
                 pst.executeUpdate();
-
-                System.out.println("Table '" + fullKey + "' created (if not exists).");
 
                 String ique = "INSERT INTO `" + fullKey + "` "
                         + "(user_name, user_last_login_date, user_last_login_time) "
@@ -199,10 +207,49 @@ public class log_in
 
             if (rows > 0)
             {
-                System.out.println("Inserted login record for: " + userName);
+                System.out.println("Inserted login record for: " + userName +"\n");
             }
             if(b)
                 break;
         }
+        email_for_otp = rs.getString("email");
+        OTP_verify(email_for_otp);
+    }
+    static String OTP_verify(String email_for_otp)
+    {
+        boolean repeat_verify = true;
+        while(repeat_verify) {
+            try {
+                Scanner scn = new Scanner(System.in);
+                int otp = (int) (Math.random() * 900000) + 100000;
+
+                ProcessBuilder otp_verify_pb = new ProcessBuilder(
+                        "bash", "-c",
+                        "echo -e \"Subject: One-Time Password (OTP) for Verification\\n\\nYour OTP for verification is: " + otp + "\\nDo not share it with anyone.\" | msmtp " + email_for_otp
+                );
+                Process otp_verify_process = otp_verify_pb.start();
+
+                System.out.println("Sending Email .....");
+                otp_verify_process.waitFor();
+                System.out.println("Check your email");
+
+                while (true) {
+                    System.out.print("enter OTP : ");
+                    int enter_otp = scn.nextInt();
+                    if (otp == enter_otp) {
+                        System.out.println("OTP Matched successfully.. ");
+                        Thread.sleep(1000);
+                        System.out.println("Proceeding ahead\n");
+                        repeat_verify = false;
+                        return null;
+                    } else {
+                        System.out.println("wrong try again ");
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Enter only numbers");
+            }
+        }
+        return  null;
     }
 }
