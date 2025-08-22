@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Driver to User Route - Ola Maps</title>
+    <script src="https://www.unpkg.com/olamaps-web-sdk@latest/dist/olamaps-web-sdk.umd.js"></script>
+
+    <style>
+        /* Removes default margin from the page */
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+
+        /* Makes the map container fill most of the screen */
+        #map { height: 90vh; width: 100%; }
+
+        /* Info panel styling */
+        .info-panel {
+            height: 10vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Info Panel -->
+<div class="info-panel">
+    <div class="info-item">
+        <div class="info-label">Distance</div>
+        <div class="info-value" id="distance" th:text="${distance} + ' km'">Distance</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">Driver Location</div>
+        <div class="info-value" th:text="${driverLat} + ', ' + ${driverLng}">Driver Location</div>
+    </div>
+    <div class="info-item">
+        <div class="info-label">User Location</div>
+        <div class="info-value" th:text="${userLat} + ', ' + ${userLng}">User Location</div>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="/driver_route_coordinates.js"></script>
+
+<script th:inline="javascript">
+    // Get coordinates from server-side template using Thymeleaf
+    const driverLat = /*[[${driverLat}]]*/ 0;
+    const driverLng = /*[[${driverLng}]]*/ 0;
+    const userLat = /*[[${userLat}]]*/ 0;
+    const userLng = /*[[${userLng}]]*/ 0;
+    const driverId = /*[[${driverId}]]*/ 'N/A';
+
+    console.log("Driver:", driverLat, driverLng);
+    console.log("User:", userLat, userLng);
+
+    // 1. Initialize Ola Maps with your API Key
+    const olaMaps = new OlaMaps({
+        apiKey: "Uer9nnXtI726LogTusu4W3ebgiCXGyumxqwCaXhn"
+    });
+
+    // 2. Calculate center point between driver and user
+    const centerLng = (driverLng + userLng) / 2;
+    const centerLat = (driverLat + userLat) / 2;
+
+    // 3. Create the map instance
+    const myMap = olaMaps.init({
+        style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+        container: 'map',
+        center: [centerLng, centerLat],
+        zoom: 12 // Adjusted for city-level view
+    });
+
+    // 4. Wait for the map to load before adding the line
+    myMap.on('load', () => {
+        console.log("Map loaded, checking for route coordinates...");
+        console.log("driverRouteCoordinates:", typeof driverRouteCoordinates !== 'undefined' ? driverRouteCoordinates : 'undefined');
+
+        // Check if driverRouteCoordinates exists (from the generated JS file)
+        if (typeof driverRouteCoordinates !== 'undefined' && driverRouteCoordinates.length > 0) {
+            console.log("Using actual route coordinates from driver_route_coordinates.js");
+            console.log("First coordinate:", driverRouteCoordinates[0]);
+            console.log("Last coordinate:", driverRouteCoordinates[driverRouteCoordinates.length - 1]);
+
+            // Adds the GeoJSON data source for the driver-user route
+            myMap.addSource('driver-route', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': driverRouteCoordinates // This comes from driver_route_coordinates.js
+                    }
+                }
+            });
+
+            // Adds the layer to style and display the line on the map
+            myMap.addLayer({
+                'id': 'driver-route',
+                'type': 'line',
+                'source': 'driver-route',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#00ff00', // Green line for driver route
+                    'line-width': 6
+                }
+            });
+
+            // Auto-fit the map to show the entire route
+            const bounds = new mapboxgl.LngLatBounds();
+            driverRouteCoordinates.forEach(coord => {
+                bounds.extend(coord);
+            });
+            myMap.fitBounds(bounds, { padding: 50 });
+
+        } else {
+            console.log("No route coordinates found, using straight line");
+            // Fallback: draw straight line if route coordinates not available
+            // Create coordinates array properly to avoid Thymeleaf parsing issues
+            const straightLineCoords = [];
+            straightLineCoords.push([driverLng, driverLat]);
+            straightLineCoords.push([userLng, userLat]);
+
+            console.log("Straight line coordinates:", straightLineCoords);
+
+            myMap.addSource('driver-route', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': straightLineCoords
+                    }
+                }
+            });
+
+            myMap.addLayer({
+                'id': 'driver-route',
+                'type': 'line',
+                'source': 'driver-route',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#ff6b6b', // Red line for straight line
+                    'line-width': 4
+                }
+            });
+
+            // Auto-fit the map to show both markers for straight line
+            const bounds = new mapboxgl.LngLatBounds();
+            bounds.extend([driverLng, driverLat]);
+            bounds.extend([userLng, userLat]);
+            myMap.fitBounds(bounds, { padding: 50 });
+        }
+
+
+        // 4. Adding markers of start location and text message
+
+        const startCoordinate = routeCoordinates[0];
+        const endCoordinate = routeCoordinates[routeCoordinates.length - 1];
+
+        // popup for start
+        const startPopup = olaMaps
+            .addPopup({
+                offset: [0, -15],
+                anchor: 'bottom'
+            })
+            .setText('🚗 Driver Location');
+
+        // popup for end
+        const endPopup = olaMaps
+            .addPopup({
+                offset: [0, -15],
+                anchor: 'bottom'
+            })
+            .setText('📍 User Pickup Location');
+
+        // start marker
+        const startMarker = new olaMaps.Marker({
+                offset: [0, -10],
+                anchor: 'bottom',
+                color: 'blue'
+            })
+            .setLngLat(startCoordinate)
+            .setPopup(startPopup)
+            .addTo(myMap);
+
+        // end marker
+        const endMarker = new olaMaps.Marker({
+                offset: [0, -10],
+                anchor: 'bottom',
+                color: 'red'
+            })
+            .setLngLat(endCoordinate)
+            .setPopup(endPopup)
+            .addTo(myMap);
+
+        // click event listeners
+        startMarker.on('click', () => {
+            startPopup.addTo(myMap);
+            console.log('Driver marker clicked!');
+        });
+
+        endMarker.on('click', () => {
+            endPopup.addTo(myMap);
+            console.log('User marker clicked!');
+        });
+
+    });
+</script>
+
+</body>
+</html>

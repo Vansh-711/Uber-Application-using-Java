@@ -250,7 +250,22 @@ public class request_a_ride extends Thread{
             //now we have the shortest distance to nearest driver and also the details of that driver in nearest_driver.txt
             //we will use that to draw a line from that driver to user in spring boot
 
+            //we will call now the checkRouteApplication.java class main method
 
+            Thread driver_route_thread = new Thread(() -> {
+                try {
+                    com.request_a_ride.driver_route.DriverRouteApplication.main(new String[]{});
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            driver_route_thread.start();
+            driver_route_thread.join();
+
+            scn.nextLine();
+
+            //now we got to price details
+            System.out.println("now we will see the price details");
         }
     }
 
