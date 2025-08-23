@@ -50,11 +50,53 @@ public class request_a_ride extends Thread{
                 "-X",
                 "POST",
                 "http://localhost:8080/actuator/shutdown").start();
-        Thread.sleep(2000);
-        System.out.println("Proceeding ahead");
+
+        killing_on_8080.waitFor();
+        Thread.sleep(3000);
+
+        System.out.println("\nProceeding ahead..");
+        System.out.println("Which vehicle would you like to select : ");
+        System.out.println("1 : Two-wheeler");
+        System.out.println("2 : Rickshaw");
+        System.out.println("3 : Normal Cab");
+        System.out.println("4 : Cab XL");
+        System.out.println("5 : Premium Cab");
+        System.out.print("Enter your choice : ");
+        String user_vehicle_selection = scn.nextLine();
+
+        int user_vehicle_choice = 0;
+        switch (user_vehicle_selection){
+            case "1" : {
+                user_vehicle_choice = 1;
+                break;
+            }
+            case "2" : {
+                user_vehicle_choice = 2;
+                break;
+            }
+            case "3" : {
+                user_vehicle_choice = 3;
+                break;
+            }
+            case "4" : {
+                user_vehicle_choice = 4;
+                break;
+            }
+            case "5" : {
+                user_vehicle_choice = 5;
+                break;
+            }
+            default:{
+                System.out.println("Enter only number 1 to 5");
+            }
+        }
+
 
 
         //2. driver search starts
+        Thread.sleep(1000);
+        System.out.print("Driver search starts ..");
+        Thread.sleep(3000);
 
         //now we will use H3 first to find user city and then to find the nearest drivers
         hash_map_1.join();
@@ -262,10 +304,56 @@ public class request_a_ride extends Thread{
             driver_route_thread.start();
             driver_route_thread.join();
 
-            scn.nextLine();
-
             //now we got to price details
+
+            System.out.print("Press enter when you are done");
+            scn.nextLine();
             System.out.println("now we will see the price details");
+
+            int[] basePrices = {30, 50, 80, 130, 140};
+
+            // Price per km
+            int pricePerKm = 10;
+
+            // Example: calculate for 20 km
+            BufferedReader reading_dist = new BufferedReader(new FileReader("nearest_driver.txt"));
+            double dist = Double.parseDouble(reading_dist.readLine());
+            Double distance = dist;
+
+            // Calculate total price for each vehicle
+            Double totalPrice = basePrices[user_vehicle_choice] + (pricePerKm * distance);
+            System.out.print("Total Fare : "+totalPrice + "\n");
+
+            switch (user_vehicle_selection){
+                case "1" : {
+                    System.out.println("Vehicle: Bike \n Price for " + distance + " km: " + totalPrice);
+                    break;
+                }
+                case "2" : {
+                    System.out.println("Vehicle: Rickshaw \n Price for " + distance + " km: " + totalPrice);
+                    break;
+                }
+                case "3" : {
+                    System.out.println("Vehicle: Normal cab \n Price for " + distance + " km: " + totalPrice);
+                    break;
+                }
+                case "4" : {
+                    System.out.println("Vehicle: Cab XL \n Price for " + distance + " km: " + totalPrice);
+                    break;
+                }
+                case "5" : {
+                    System.out.println("Vehicle: Premium Cab \n Price for " + distance + " km: " + totalPrice);
+                    break;
+                }
+                default:{
+                    System.out.println("Enter only number 1 to 5");
+                }
+            }
+
+            System.out.println("Proceeding ahead....");
+            Thread.sleep(2000);
+            scn.nextLine();
+            System.out.println("");
         }
     }
 

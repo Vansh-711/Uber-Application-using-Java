@@ -5,11 +5,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.*;
+import java.util.Scanner;
 
 @SpringBootApplication
 public class DriverRouteApplication extends CheckRouteApplication {
 
     public static void main(String[] args) throws Exception {
+        Scanner scn = new Scanner(System.in);
         
         // Read driver coordinates from nearest_driver.txt (created by your ride request code)
         BufferedReader driverReader = new BufferedReader(new FileReader("nearest_driver.txt"));
@@ -107,5 +109,6 @@ public class DriverRouteApplication extends CheckRouteApplication {
         // Open the driver route page
         System.out.println("Opening driver route in browser...");
         Process process = new ProcessBuilder("open", "http://localhost:8080/driver/route").start();
+        scn.nextLine();
     }
 }
