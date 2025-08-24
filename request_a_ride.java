@@ -12,6 +12,7 @@ import com.uber.h3core.H3Core;
 import com.uber.h3core.util.LatLng;
 
 public class request_a_ride extends Thread{
+
     request_a_ride() throws Exception{
         Scanner scn = new Scanner(System.in);
 
@@ -61,33 +62,43 @@ public class request_a_ride extends Thread{
         System.out.println("3 : Normal Cab");
         System.out.println("4 : Cab XL");
         System.out.println("5 : Premium Cab");
-        System.out.print("Enter your choice : ");
-        String user_vehicle_selection = scn.nextLine();
 
         int user_vehicle_choice = 0;
-        switch (user_vehicle_selection){
-            case "1" : {
-                user_vehicle_choice = 1;
-                break;
-            }
-            case "2" : {
-                user_vehicle_choice = 2;
-                break;
-            }
-            case "3" : {
-                user_vehicle_choice = 3;
-                break;
-            }
-            case "4" : {
-                user_vehicle_choice = 4;
-                break;
-            }
-            case "5" : {
-                user_vehicle_choice = 5;
-                break;
-            }
-            default:{
-                System.out.println("Enter only number 1 to 5");
+        boolean repeat_vehicle_choice = true;
+
+        while(repeat_vehicle_choice) {
+            System.out.print("\nEnter your choice : ");
+            String user_vehicle_selection_input = scn.nextLine();
+
+            switch (user_vehicle_selection_input) {
+                case "1": {
+                    user_vehicle_choice = 1;
+                    repeat_vehicle_choice = false;
+                    break;
+                }
+                case "2": {
+                    user_vehicle_choice = 2;
+                    repeat_vehicle_choice = false;
+                    break;
+                }
+                case "3": {
+                    user_vehicle_choice = 3;
+                    repeat_vehicle_choice = false;
+                    break;
+                }
+                case "4": {
+                    user_vehicle_choice = 4;
+                    repeat_vehicle_choice = false;
+                    break;
+                }
+                case "5": {
+                    user_vehicle_choice = 5;
+                    repeat_vehicle_choice = false;
+                    break;
+                }
+                default: {
+                    System.out.println("Enter only number 1 to 5");
+                }
             }
         }
 
@@ -102,7 +113,7 @@ public class request_a_ride extends Thread{
         hash_map_1.join();
         System.out.println("Loaded cities: " + hash_map_1.hash_map_city.size());
 
-        //1.Finding user city
+        //2.1 Finding user city
         //the hashmap of every city hexcode is stored already
         BufferedReader user_curr_br = new BufferedReader(new FileReader("pick_up_coordinates.txt"));
 
@@ -127,22 +138,52 @@ public class request_a_ride extends Thread{
         //now we have a file named user_current_city.txt which contains the user current city
 
 
-        //2.Finding drivers near user
+        //2.2 Finding drivers near user
 
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
         if (con != null)
             System.out.println("connection is done ");
         else
-            System.out.println("something else in connection ");
+            System.out.println("error in connection ");
 
 
         BufferedReader user_city_br = new BufferedReader(new FileReader("user_current_city.txt"));
         String user_city = user_city_br.readLine();
 
-        String driver_in_user_city_query = "select id , latitude , longitude from drivers where city = ?";
+        // query to take data from database about all drivers in city
+
+            String user_vehicle_choice_str = null;
+            switch (user_vehicle_choice){
+                case 1 : {
+                    user_vehicle_choice_str = "Two-wheeler";
+                    break;
+                }
+                case 2 : {
+                    user_vehicle_choice_str = "Rickshaw";
+                    break;
+                }
+                case 3 : {
+                    user_vehicle_choice_str = "Normal cab";
+                    break;
+                }
+                case 4 : {
+                    user_vehicle_choice_str = "Cab XL";
+                    break;
+                }
+                case 5 : {
+                    user_vehicle_choice_str = "Premium Cab";
+                    break;
+                }
+                default:{
+                    //it will never enter this part, as user_vehicle_choice is computer entered
+                }
+            }
+
+        String driver_in_user_city_query = "select id , latitude , longitude from drivers where city = ? and vehicle = ?";
         PreparedStatement driver_in_user_city_ps = con.prepareStatement(driver_in_user_city_query);
 
         driver_in_user_city_ps.setString(1 , user_city);
+        driver_in_user_city_ps.setString(2 , user_vehicle_choice_str);
 
         ResultSet driver_in_user_city_result_set = driver_in_user_city_ps.executeQuery();
 
@@ -150,6 +191,7 @@ public class request_a_ride extends Thread{
 
         //we will go through them all and give random position to driver in their city
 
+        //mapping the city boundaries
         ProcessBuilder driver_in_user_city_pb = new ProcessBuilder("bash", "-c",
                 "curl -s \"https://nominatim.openstreetmap.org/search?city=" + user_city + "&format=json\" | jq -r '.[0].boundingbox | join(\",\")'");
 
@@ -254,7 +296,7 @@ public class request_a_ride extends Thread{
                 k++;
             }
             if (k > 12) {
-                System.out.println("No drivers found in k-rings, searching all drivers...");
+                System.out.println("searching all drivers...");
 
                 // Fallback: search all drivers regardless of hex
                 ll_nodes shifter_2 = drivers_in_user_city_ll.head;
@@ -288,12 +330,13 @@ public class request_a_ride extends Thread{
             }
             else{
                 System.out.println("No drivers available in the city");
+                //we will never reach this part
             }
             //now we have the shortest distance to nearest driver and also the details of that driver in nearest_driver.txt
             //we will use that to draw a line from that driver to user in spring boot
 
-            //we will call now the checkRouteApplication.java class main method
 
+            //we will call now the checkRouteApplication.java class main method
             Thread driver_route_thread = new Thread(() -> {
                 try {
                     com.request_a_ride.driver_route.DriverRouteApplication.main(new String[]{});
@@ -321,28 +364,28 @@ public class request_a_ride extends Thread{
             Double distance = dist;
 
             // Calculate total price for each vehicle
-            Double totalPrice = basePrices[user_vehicle_choice] + (pricePerKm * distance);
+            Double totalPrice = basePrices[user_vehicle_choice - 1] + (pricePerKm * distance);
             System.out.print("Total Fare : "+totalPrice + "\n");
 
-            switch (user_vehicle_selection){
-                case "1" : {
-                    System.out.println("Vehicle: Bike \n Price for " + distance + " km: " + totalPrice);
+            switch (user_vehicle_choice){
+                case 1 : {
+                    System.out.println("Vehicle: Bike \nPrice for " + distance + " km is " + totalPrice);
                     break;
                 }
-                case "2" : {
-                    System.out.println("Vehicle: Rickshaw \n Price for " + distance + " km: " + totalPrice);
+                case 2 : {
+                    System.out.println("Vehicle: Rickshaw \nPrice for " + distance + " km is " + totalPrice);
                     break;
                 }
-                case "3" : {
-                    System.out.println("Vehicle: Normal cab \n Price for " + distance + " km: " + totalPrice);
+                case 3 : {
+                    System.out.println("Vehicle: Normal cab \nPrice for " + distance + " km is " + totalPrice);
                     break;
                 }
-                case "4" : {
-                    System.out.println("Vehicle: Cab XL \n Price for " + distance + " km: " + totalPrice);
+                case 4 : {
+                    System.out.println("Vehicle: Cab XL \nPrice for " + distance + " km is " + totalPrice);
                     break;
                 }
-                case "5" : {
-                    System.out.println("Vehicle: Premium Cab \n Price for " + distance + " km: " + totalPrice);
+                case 5 : {
+                    System.out.println("Vehicle: Premium Cab \nPrice for " + distance + " km is " + totalPrice);
                     break;
                 }
                 default:{
@@ -354,6 +397,9 @@ public class request_a_ride extends Thread{
             Thread.sleep(2000);
             scn.nextLine();
             System.out.println("");
+
+            //now we will send a email with all the details
+
         }
     }
 
@@ -374,7 +420,9 @@ public class request_a_ride extends Thread{
             List<Long> hexes = h3.gridDisk(user_h3_index, k);
             for(Long hex : hexes){
                 if(hash_map_1.hash_map_city.containsKey(hex)){
-                    return hash_map_1.hash_map_city.get(hex);
+                    String user_city =  hash_map_1.hash_map_city.get(hex);
+
+                    return user_city;
                 }
             }
             k++;

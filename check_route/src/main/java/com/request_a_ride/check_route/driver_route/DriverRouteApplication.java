@@ -97,9 +97,9 @@ public class DriverRouteApplication extends CheckRouteApplication {
         driverInfoWriter.write(userCoords[1]); // User Lng
         driverInfoWriter.close();
 
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         System.out.println("All files generated successfully!");
-        Thread.sleep(1000);
+        Thread.sleep(1500);
         System.out.println("Starting Spring Boot server...");
         
         // Start Spring Boot application
