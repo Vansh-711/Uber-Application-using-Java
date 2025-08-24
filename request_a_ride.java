@@ -243,7 +243,7 @@ public class request_a_ride extends Thread{
             //we will have to create new hexcode of resolution 7 for finding neraby drivers of user
             long user_h3_index_res7 = h3.latLngToCell(user_curr_lat, user_curr_lng, 7);// edge length : 1.22062975 km
 
-            //looping to save all drivers hexcode into a hashmap of lists for instant searching
+            //looping to save all drivers by hex into hexcode into a hashmap of lists for instant searching
             HashMap<Long, List<ll_nodes>> drivers_by_hex_hashmap = new HashMap<>();
 
             ll_nodes shifter = drivers_in_user_city_ll.head;
@@ -251,7 +251,17 @@ public class request_a_ride extends Thread{
             while (shifter != null) {
                 long driver_h3 = h3.latLngToCell(shifter.random_lat, shifter.random_lng, 7);
 
-                drivers_by_hex_hashmap.computeIfAbsent(driver_h3, k -> new ArrayList<>()).add(shifter);
+                //now we will check if in the hashmap, in the index of driver_h3, if there a arraylist list of nodes exists or not, if it exists then add into arraylist and if not then create a new arraylist.
+                //either we can do this
+                List<ll_nodes> list = drivers_by_hex_hashmap.get(driver_h3);
+                if(list == null){
+                    list = new ArrayList<>();
+                    drivers_by_hex_hashmap.put(driver_h3 , list);
+                }
+                list.add(shifter);
+
+                //or the below commented line, below one is more efficient
+                //drivers_by_hex_hashmap.computeIfAbsent(driver_h3, k -> new ArrayList<>()).add(shifter);
                 shifter = shifter.next;
             }
             //we have saved the hexcode of all drivers in hashmap
