@@ -265,28 +265,28 @@ public class request_a_ride extends Thread{
 
 
             if(nearest_drivers_by_type.size() > 0) {
-                BufferedWriter nearest_drivers_br = new BufferedWriter(new FileWriter("nearest_drivers_5.txt"));
+                BufferedWriter nearest_drivers_bw = new BufferedWriter(new FileWriter("nearest_drivers_5.txt"));
 
                 for(String vehicle_type : vehicle_types) {
                     if(nearest_drivers_by_type.containsKey(vehicle_type)) {
                         ll_nodes driver = nearest_drivers_by_type.get(vehicle_type);
                         double distance = shortest_distances_by_type.get(vehicle_type);
 
-                        nearest_drivers_br.write(vehicle_type);
-                        nearest_drivers_br.newLine();
-                        nearest_drivers_br.write(Double.toString(distance));
-                        nearest_drivers_br.newLine();
-                        nearest_drivers_br.write(Integer.toString(driver.id));
-                        nearest_drivers_br.newLine();
-                        nearest_drivers_br.write(Double.toString(driver.random_lat));
-                        nearest_drivers_br.newLine();
-                        nearest_drivers_br.write(Double.toString(driver.random_lng));
-                        nearest_drivers_br.newLine();
-                        nearest_drivers_br.write("---"); // separator
-                        nearest_drivers_br.newLine();
+                        nearest_drivers_bw.write(vehicle_type);
+                        nearest_drivers_bw.newLine();
+                        nearest_drivers_bw.write(Double.toString(distance));
+                        nearest_drivers_bw.newLine();
+                        nearest_drivers_bw.write(Integer.toString(driver.id));
+                        nearest_drivers_bw.newLine();
+                        nearest_drivers_bw.write(Double.toString(driver.random_lat));
+                        nearest_drivers_bw.newLine();
+                        nearest_drivers_bw.write(Double.toString(driver.random_lng));
+                        nearest_drivers_bw.newLine();
+                        nearest_drivers_bw.write("---"); // separator
+                        nearest_drivers_bw.newLine();
                     }
                 }
-                nearest_drivers_br.flush();
+                nearest_drivers_bw.flush();
             }
             else{
                 System.out.println("No drivers available in the city");
@@ -303,8 +303,6 @@ public class request_a_ride extends Thread{
             int[] driver_ids = new int[5];
             double[] latitudes = new double[5];
             double[] longitudes = new double[5];
-            int[] basePrices = {30, 50, 80, 130, 140};
-            int pricePerKm = 10;
 
             // Read the file and parse data
             String line;
@@ -319,11 +317,11 @@ public class request_a_ride extends Thread{
                 }
 
                 switch (line_count % 6) {
-                    case 0: // vehicle type (skip, we already know the order)
+                    case 0: // vehicle type (we already know the order)
                         break;
-                    case 1: // distance
-                        distances[vehicle_index] = Double.parseDouble(line);
-                        break;
+//                    case 1: // distance
+//                        distances[vehicle_index] = Double.parseDouble(line);
+//                        break;
                     case 2: // driver id
                         driver_ids[vehicle_index] = Integer.parseInt(line);
                         break;
@@ -339,10 +337,39 @@ public class request_a_ride extends Thread{
 
             nearest_drivers_5_br.close();
 
+            //finding distance between user and location to reach
+            double user_dest_distance_double = 0;
+
+            Process user_dest_distance = new ProcessBuilder(
+                    "bash",
+                    "-c",
+                    "jq -r '(.routes[0].legs[0].distance / 1000)' directions_raw.txt > user_dest_dist.txt"
+            ).start();
+
+            // Wait for the process to complete
+            int exitCode_2 = user_dest_distance.waitFor();
+            if (exitCode_2 != 0) {
+                System.out.println("Error creating user_dest_dist.txt with exit code: " + exitCode);
+            }
+            Thread.sleep(1000);
+
+            //changing the distance in nearest_driver to more accurate distance
+
+            // Read the distance from user_dest_dist.txt
+            BufferedReader dist_reader = new BufferedReader(new FileReader("user_dest_dist.txt"));
+            user_dest_distance_double = Double.parseDouble(dist_reader.readLine());
+            dist_reader.close();
+
+            System.out.println("Accurate distance stored");
+
+
             // finding and printing prices
+            int[] basePrices = {30, 50, 80, 130, 140};
+            int pricePerKm = 10;
+
             System.out.println("Which vehicle would you like to select : ");
             for (int i = 0; i < 5; i++) {
-                double totalPrice = basePrices[i] + (pricePerKm * distances[i]);
+                double totalPrice = basePrices[i] + (pricePerKm * user_dest_distance_double);
                 System.out.println((i + 1) + " : " + vehicle_names[i] + " | Price : ₹" + totalPrice);
             }
 
