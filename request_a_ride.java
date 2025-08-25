@@ -56,52 +56,6 @@ public class request_a_ride extends Thread{
         Thread.sleep(3000);
 
         System.out.println("\nProceeding ahead..");
-        System.out.println("Which vehicle would you like to select : ");
-        System.out.println("1 : Two-wheeler");
-        System.out.println("2 : Rickshaw");
-        System.out.println("3 : Normal Cab");
-        System.out.println("4 : Cab XL");
-        System.out.println("5 : Premium Cab");
-
-        int user_vehicle_choice = 0;
-        boolean repeat_vehicle_choice = true;
-
-        while(repeat_vehicle_choice) {
-            System.out.print("\nEnter your choice : ");
-            String user_vehicle_selection_input = scn.nextLine();
-
-            switch (user_vehicle_selection_input) {
-                case "1": {
-                    user_vehicle_choice = 1;
-                    repeat_vehicle_choice = false;
-                    break;
-                }
-                case "2": {
-                    user_vehicle_choice = 2;
-                    repeat_vehicle_choice = false;
-                    break;
-                }
-                case "3": {
-                    user_vehicle_choice = 3;
-                    repeat_vehicle_choice = false;
-                    break;
-                }
-                case "4": {
-                    user_vehicle_choice = 4;
-                    repeat_vehicle_choice = false;
-                    break;
-                }
-                case "5": {
-                    user_vehicle_choice = 5;
-                    repeat_vehicle_choice = false;
-                    break;
-                }
-                default: {
-                    System.out.println("Enter only number 1 to 5");
-                }
-            }
-        }
-
 
 
         //2. driver search starts
@@ -152,38 +106,10 @@ public class request_a_ride extends Thread{
 
         // query to take data from database about all drivers in city
 
-            String user_vehicle_choice_str = null;
-            switch (user_vehicle_choice){
-                case 1 : {
-                    user_vehicle_choice_str = "Two-wheeler";
-                    break;
-                }
-                case 2 : {
-                    user_vehicle_choice_str = "Rickshaw";
-                    break;
-                }
-                case 3 : {
-                    user_vehicle_choice_str = "Normal cab";
-                    break;
-                }
-                case 4 : {
-                    user_vehicle_choice_str = "Cab XL";
-                    break;
-                }
-                case 5 : {
-                    user_vehicle_choice_str = "Premium Cab";
-                    break;
-                }
-                default:{
-                    //it will never enter this part, as user_vehicle_choice is computer entered
-                }
-            }
-
-        String driver_in_user_city_query = "select id , latitude , longitude from drivers where city = ? and vehicle = ?";
+        String driver_in_user_city_query = "select id , latitude , longitude , vehicle from drivers where city = ?";
         PreparedStatement driver_in_user_city_ps = con.prepareStatement(driver_in_user_city_query);
 
         driver_in_user_city_ps.setString(1 , user_city);
-        driver_in_user_city_ps.setString(2 , user_vehicle_choice_str);
 
         ResultSet driver_in_user_city_result_set = driver_in_user_city_ps.executeQuery();
 
@@ -234,7 +160,9 @@ public class request_a_ride extends Thread{
                 double lng = min_lng_user_city + (max_lng_user_city - min_lng_user_city) * rand.nextDouble();
 
                 int driver_in_user_city_id = driver_in_user_city_result_set.getInt(1);
-                drivers_in_user_city_ll.push(driver_in_user_city_id, lat, lng);
+                String vehicle_type = driver_in_user_city_result_set.getString(4);
+
+                drivers_in_user_city_ll.push(driver_in_user_city_id, lat, lng, vehicle_type);
             }
 
             //now we have a linked that contains all the drivers in the city and there random location in the city
@@ -243,9 +171,19 @@ public class request_a_ride extends Thread{
             //we will have to create new hexcode of resolution 7 for finding neraby drivers of user
             long user_h3_index_res7 = h3.latLngToCell(user_curr_lat, user_curr_lng, 7);// edge length : 1.22062975 km
 
+            // Storage for nearest driver of each vehicle type
+            HashMap<String, ll_nodes> nearest_drivers_by_type = new HashMap<>();
+            HashMap<String, Double> shortest_distances_by_type = new HashMap<>();
+
+            String[] vehicle_types = {"Two-wheeler", "Rickshaw", "Normal cab", "Cab XL", "Premium Cab"};
+            for(String type : vehicle_types) {
+                shortest_distances_by_type.put(type, Double.MAX_VALUE);
+            }
+
             //looping to save all drivers by hex into hexcode into a hashmap of lists for instant searching
             HashMap<Long, List<ll_nodes>> drivers_by_hex_hashmap = new HashMap<>();
 
+            //saving ghe hexcode of all drivers in user_city into hashmap for rapid searching
             ll_nodes shifter = drivers_in_user_city_ll.head;
 
             while (shifter != null) {
@@ -266,17 +204,14 @@ public class request_a_ride extends Thread{
             }
             //we have saved the hexcode of all drivers in hashmap
 
-            //searching with gridDisk
+            //searching with gridDisk for all 5 vehicle types
             int k = 0;
-
-            double shortest_distance_to_user = Double.MAX_VALUE;
-            ll_nodes nearest_driver = null;
 
             while (k <= 12) {
                 // Get all hexes within distance k from user's hex
                 List<Long> hexes = h3.gridDisk(user_h3_index_res7, k);
 
-                boolean found_in_this_k = false; // flag for this k-ring
+                boolean found_in_this_k = false; // checking if we found driver in the k-ring
 
                 for (Long hex : hexes) {
                     // Check if there are drivers in this hex
@@ -287,9 +222,10 @@ public class request_a_ride extends Thread{
                             // Calculate Haversine distance between user and driver
                             double distance = haversine(user_curr_lat, user_curr_lng, driver.random_lat, driver.random_lng);
 
-                            if (distance < shortest_distance_to_user) {
-                                shortest_distance_to_user = distance;
-                                nearest_driver = driver;
+                            // Check if this is the nearest driver for this vehicle type
+                            if (distance < shortest_distances_by_type.get(driver.vehicle_type)) {
+                                shortest_distances_by_type.put(driver.vehicle_type, distance);
+                                nearest_drivers_by_type.put(driver.vehicle_type, driver);
                             }
                         }
 
@@ -298,13 +234,17 @@ public class request_a_ride extends Thread{
                     }
                 }
 
-                // If we found drivers in this ring, stop loop
-                if (found_in_this_k) {
+                // Check if we found at least one driver of each type, if found then stop
+                if (nearest_drivers_by_type.size() == 5) {
                     break;
                 }
 
+                if (found_in_this_k) {
+                    // Continue searching if we haven't found all 5 types yet
+                }
                 k++;
             }
+
             if (k > 12) {
                 System.out.println("searching all drivers...");
 
@@ -314,29 +254,39 @@ public class request_a_ride extends Thread{
                     double distance = haversine(user_curr_lat, user_curr_lng,
                             shifter_2.random_lat, shifter_2.random_lng);
 
-                    if (distance < shortest_distance_to_user) {
-                        shortest_distance_to_user = distance;
-                        nearest_driver = shifter_2;
+                    // Check if this is the nearest driver for this vehicle type
+                    if (distance < shortest_distances_by_type.get(shifter_2.vehicle_type)) {
+                        shortest_distances_by_type.put(shifter_2.vehicle_type, distance);
+                        nearest_drivers_by_type.put(shifter_2.vehicle_type, shifter_2);
                     }
                     shifter_2 = shifter_2.next;
                 }
             }
 
-            if(nearest_driver != null) {
-                BufferedWriter nearest_driver_br = new BufferedWriter(new FileWriter("nearest_driver.txt"));
 
-                nearest_driver_br.write(Double.toString(shortest_distance_to_user));
-                nearest_driver_br.newLine();
+            if(nearest_drivers_by_type.size() > 0) {
+                BufferedWriter nearest_drivers_br = new BufferedWriter(new FileWriter("nearest_drivers_5.txt"));
 
-                nearest_driver_br.write(Integer.toString(nearest_driver.id));
-                nearest_driver_br.newLine();
+                for(String vehicle_type : vehicle_types) {
+                    if(nearest_drivers_by_type.containsKey(vehicle_type)) {
+                        ll_nodes driver = nearest_drivers_by_type.get(vehicle_type);
+                        double distance = shortest_distances_by_type.get(vehicle_type);
 
-                nearest_driver_br.write(Double.toString(nearest_driver.random_lat));
-                nearest_driver_br.newLine();
-
-                nearest_driver_br.write(Double.toString(nearest_driver.random_lng));
-
-                nearest_driver_br.flush();
+                        nearest_drivers_br.write(vehicle_type);
+                        nearest_drivers_br.newLine();
+                        nearest_drivers_br.write(Double.toString(distance));
+                        nearest_drivers_br.newLine();
+                        nearest_drivers_br.write(Integer.toString(driver.id));
+                        nearest_drivers_br.newLine();
+                        nearest_drivers_br.write(Double.toString(driver.random_lat));
+                        nearest_drivers_br.newLine();
+                        nearest_drivers_br.write(Double.toString(driver.random_lng));
+                        nearest_drivers_br.newLine();
+                        nearest_drivers_br.write("---"); // separator
+                        nearest_drivers_br.newLine();
+                    }
+                }
+                nearest_drivers_br.flush();
             }
             else{
                 System.out.println("No drivers available in the city");
@@ -345,6 +295,116 @@ public class request_a_ride extends Thread{
             //now we have the shortest distance to nearest driver and also the details of that driver in nearest_driver.txt
             //we will use that to draw a line from that driver to user in spring boot
 
+            BufferedReader nearest_drivers_5_br = new BufferedReader(new FileReader("nearest_drivers_5.txt"));
+
+            // Arrays for vehicle info
+            String[] vehicle_names = {"Two-wheeler", "Rickshaw", "Normal Cab", "Cab XL", "Premium Cab"};
+            double[] distances = new double[5];
+            int[] driver_ids = new int[5];
+            double[] latitudes = new double[5];
+            double[] longitudes = new double[5];
+            int[] basePrices = {30, 50, 80, 130, 140};
+            int pricePerKm = 10;
+
+            // Read the file and parse data
+            String line;
+            int vehicle_index = 0;
+            int line_count = 0;
+
+            while ((line = nearest_drivers_5_br.readLine()) != null && vehicle_index < 5) {
+                if (line.equals("---")) {
+                    vehicle_index++;
+                    line_count = 0;
+                    continue;
+                }
+
+                switch (line_count % 6) {
+                    case 0: // vehicle type (skip, we already know the order)
+                        break;
+                    case 1: // distance
+                        distances[vehicle_index] = Double.parseDouble(line);
+                        break;
+                    case 2: // driver id
+                        driver_ids[vehicle_index] = Integer.parseInt(line);
+                        break;
+                    case 3: // latitude
+                        latitudes[vehicle_index] = Double.parseDouble(line);
+                        break;
+                    case 4: // longitude
+                        longitudes[vehicle_index] = Double.parseDouble(line);
+                        break;
+                }
+                line_count++;
+            }
+
+            nearest_drivers_5_br.close();
+
+            // finding and printing prices
+            System.out.println("Which vehicle would you like to select : ");
+            for (int i = 0; i < 5; i++) {
+                double totalPrice = basePrices[i] + (pricePerKm * distances[i]);
+                System.out.println((i + 1) + " : " + vehicle_names[i] + " | Price : ₹" + totalPrice);
+            }
+
+            int user_vehicle_choice = 0;
+            boolean repeat_vehicle_choice = true;
+
+            while(repeat_vehicle_choice) {
+                System.out.print("\nEnter your choice : ");
+                String user_vehicle_selection_input = scn.nextLine();
+
+                switch (user_vehicle_selection_input) {
+                    case "1": {
+                        user_vehicle_choice = 1;
+                        repeat_vehicle_choice = false;
+                        break;
+                    }
+                    case "2": {
+                        user_vehicle_choice = 2;
+                        repeat_vehicle_choice = false;
+                        break;
+                    }
+                    case "3": {
+                        user_vehicle_choice = 3;
+                        repeat_vehicle_choice = false;
+                        break;
+                    }
+                    case "4": {
+                        user_vehicle_choice = 4;
+                        repeat_vehicle_choice = false;
+                        break;
+                    }
+                    case "5": {
+                        user_vehicle_choice = 5;
+                        repeat_vehicle_choice = false;
+                        break;
+                    }
+                    default: {
+                        System.out.println("Enter only number 1 to 5");
+                    }
+                }
+            }
+
+            // Create nearest_driver.txt with selected vehicle's details
+            BufferedWriter selected_driver_bw = new BufferedWriter(new FileWriter("nearest_driver.txt"));
+
+            // array start from 0, so we do -1
+            int selected_index = user_vehicle_choice - 1;
+
+            selected_driver_bw.write(Double.toString(distances[selected_index]));
+            selected_driver_bw.newLine();
+
+            selected_driver_bw.write(Integer.toString(driver_ids[selected_index]));
+            selected_driver_bw.newLine();
+
+            selected_driver_bw.write(Double.toString(latitudes[selected_index]));
+            selected_driver_bw.newLine();
+
+            selected_driver_bw.write(Double.toString(longitudes[selected_index]));
+
+            selected_driver_bw.flush();
+
+            System.out.println("Selected driver details saved to nearest_driver.txt");
 
             //we will call now the checkRouteApplication.java class main method
             Thread driver_route_thread = new Thread(() -> {
@@ -361,47 +421,47 @@ public class request_a_ride extends Thread{
 
             System.out.print("Press enter when you are done");
             scn.nextLine();
-            System.out.println("now we will see the price details");
-
-            int[] basePrices = {30, 50, 80, 130, 140};
-
-            // Price per km
-            int pricePerKm = 10;
-
-            // Example: calculate for 20 km
-            BufferedReader reading_dist = new BufferedReader(new FileReader("nearest_driver.txt"));
-            double dist = Double.parseDouble(reading_dist.readLine());
-            Double distance = dist;
-
-            // Calculate total price for each vehicle
-            Double totalPrice = basePrices[user_vehicle_choice - 1] + (pricePerKm * distance);
-            System.out.print("Total Fare : "+totalPrice + "\n");
-
-            switch (user_vehicle_choice){
-                case 1 : {
-                    System.out.println("Vehicle: Bike \nPrice for " + distance + " km is " + totalPrice);
-                    break;
-                }
-                case 2 : {
-                    System.out.println("Vehicle: Rickshaw \nPrice for " + distance + " km is " + totalPrice);
-                    break;
-                }
-                case 3 : {
-                    System.out.println("Vehicle: Normal cab \nPrice for " + distance + " km is " + totalPrice);
-                    break;
-                }
-                case 4 : {
-                    System.out.println("Vehicle: Cab XL \nPrice for " + distance + " km is " + totalPrice);
-                    break;
-                }
-                case 5 : {
-                    System.out.println("Vehicle: Premium Cab \nPrice for " + distance + " km is " + totalPrice);
-                    break;
-                }
-                default:{
-                    System.out.println("Enter only number 1 to 5");
-                }
-            }
+//            System.out.println("now we will see the price details");
+//
+//            int[] basePrices = {30, 50, 80, 130, 140};
+//
+//            // Price per km
+//            int pricePerKm = 10;
+//
+//            // Example: calculate for 20 km
+//            BufferedReader reading_dist = new BufferedReader(new FileReader("nearest_driver.txt"));
+//            double dist = Double.parseDouble(reading_dist.readLine());
+//            Double distance = dist;
+//
+//            // Calculate total price for each vehicle
+//            Double totalPrice = basePrices[user_vehicle_choice - 1] + (pricePerKm * distance);
+//            System.out.print("Total Fare : "+totalPrice + "\n");
+//
+//            switch (user_vehicle_choice){
+//                case 1 : {
+//                    System.out.println("Vehicle: Bike \nPrice for " + distance + " km is " + totalPrice);
+//                    break;
+//                }
+//                case 2 : {
+//                    System.out.println("Vehicle: Rickshaw \nPrice for " + distance + " km is " + totalPrice);
+//                    break;
+//                }
+//                case 3 : {
+//                    System.out.println("Vehicle: Normal cab \nPrice for " + distance + " km is " + totalPrice);
+//                    break;
+//                }
+//                case 4 : {
+//                    System.out.println("Vehicle: Cab XL \nPrice for " + distance + " km is " + totalPrice);
+//                    break;
+//                }
+//                case 5 : {
+//                    System.out.println("Vehicle: Premium Cab \nPrice for " + distance + " km is " + totalPrice);
+//                    break;
+//                }
+//                default:{
+//                    System.out.println("Enter only number 1 to 5");
+//                }
+//            }
 
             System.out.println("Proceeding ahead....");
             Thread.sleep(2000);
@@ -442,9 +502,9 @@ public class request_a_ride extends Thread{
 }
 class ll_drivers{
     ll_nodes head;
-    void push(int id , double lat , double lng){
+    void push(int id , double lat , double lng, String vehicle_type){
         if(head == null){
-            ll_nodes temp = new ll_nodes(id , lat , lng);
+            ll_nodes temp = new ll_nodes(id , lat , lng, vehicle_type);
             head = temp;
         }
         else{
@@ -452,7 +512,7 @@ class ll_drivers{
             while(temp.next != null){
                 temp = temp.next;
             }
-            ll_nodes neww = new ll_nodes(id , lat , lng);
+            ll_nodes neww = new ll_nodes(id , lat , lng, vehicle_type);
             temp.next = neww;
         }
     }
@@ -462,11 +522,13 @@ class ll_nodes{
     int id;
     double random_lat;
     double random_lng;
+    String vehicle_type;
     ll_nodes(){}
 
-    ll_nodes(int id , double lat , double lng){
+    ll_nodes(int id , double lat , double lng , String vehicle){
         this.id = id;
         this.random_lat = lat;
         this.random_lng = lng;
+        this.vehicle_type = vehicle;
     }
 }
