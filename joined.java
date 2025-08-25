@@ -7,39 +7,47 @@ class UberSystem
     {
         Scanner scn = new Scanner(System.in);
 
-        try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", ""))
+        try
         {
-            if (con != null) {
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
+            if (con != null)
+            {
                 System.out.println(" Database connected successfully");
-            } else {
-                System.out.println(" Failed to connect");
-                return;
-            }
 
-            System.out.print("Enter choice (signup/login): ");
-            String choice = scn.nextLine().trim().toLowerCase();
+                while(true)
+                {
+                    System.out.print("Enter choice (signup/login/exit): ");
+                    String choice = scn.nextLine().trim().toLowerCase();
 
-            if (choice.equals("signup"))
-            {
-                sign_up.main(args);
-                scn.nextLine();
-                log_in.main(args);
-            }
-            else if (choice.equals("login"))
-            {
-                log_in.main(args);
+                    if (choice.equals("signup"))
+                    {
+                        new_sine_up.main(args);
+                    }
+                    else if (choice.equals("login"))
+                    {
+                        log_in.main(args);
+                        break;
+                    }
+                    else if (choice.equals("exit"))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        System.out.println("Invalid choice!");
+                    }
+                }
+                main_menu.main(args);
             }
             else
             {
-                System.out.println("Invalid choice!");
+                System.out.println(" Failed to connect");
             }
-
-            main_menu.main(args);
 
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            System.out.println("something to else ");
         }
     }
 }

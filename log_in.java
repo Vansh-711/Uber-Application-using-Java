@@ -7,11 +7,15 @@ public class log_in
 {
     static Connection con;
 
-    static {
-        try {
+    static
+    {
+        try
+        {
             con = DriverManager.getConnection("jdbc:mysql://localhost:3306/uber_application", "root", "");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        }
+        catch (SQLException e)
+        {
+            System.out.println("error in connection");
         }
     }
 
@@ -20,201 +24,197 @@ public class log_in
         Scanner scn = new Scanner(System.in);
 
         if (con != null)
-            System.out.println("connection is done ");
-        else
-            System.out.println("something else in connection ");
-
-        System.out.println("\nWelcome to Login Menu\n");
-
-        String email_for_otp = "";
-
-        ResultSet rs = null;
-        while(true)
         {
-            System.out.println("1. phone no \n2. email id ");
-            System.out.print("Enter your choice : ");
-            int x = scn.nextInt();
-            scn.nextLine();
-            boolean b = false;
+            System.out.println("connection is done ");
 
+            String email_for_otp = "";
 
-            switch (x)
+            ResultSet rs = null;
+            while (true)
             {
-                case 1:
+                System.out.println("1. phone no \n2. email id ");
+                int x = scn.nextInt();
+                scn.nextLine();
+                boolean b = false;
+
+                switch (x)
                 {
-                    System.out.print("Enter phone number for login: ");
-                    String inputPhone = scn.nextLine();
-
-                    System.out.println("enter your password ");
-                    String inputPassword = scn.nextLine();
-
-                    String loginQuery = "SELECT * FROM user_info WHERE phone = ?";
-                    String loginQuery1 = "SELECT password FROM user_info where phone = ? ";
-                    ResultSet rs1 = null;
-
-                    try
+                    case 1:
                     {
-                        PreparedStatement pst = con.prepareCall(loginQuery1);
-                        pst.setString(1 ,inputPhone);
-                        rs1 = pst.executeQuery();
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println("Error during 1 login: " + e.getMessage());
-                    }
+                        System.out.print("Enter phone number for login: ");
+                        String inputPhone = scn.nextLine();
 
-                    try
-                    {
-                        PreparedStatement pst = con.prepareStatement(loginQuery);
-                        pst.setString(1, inputPhone);
+                        System.out.println("enter your password ");
+                        String inputPassword = scn.nextLine();
 
-                        rs = pst.executeQuery();
+                        String loginQuery = "SELECT * FROM user_info WHERE phone = ?";
+                        String loginQuery1 = "SELECT password FROM user_info where phone = ? ";
+                        ResultSet rs1 = null;
 
-                        if (rs.next() && rs1.next() && rs1.getString(1).equals(inputPassword))
+                        try
                         {
-                            System.out.println("Login successful!");
-                            System.out.println("User Details:");
-                            System.out.println("ID: " + rs.getInt("id"));
-                            System.out.println("Name: "
-                                    + rs.getString("first_name") + " "
-                                    + rs.getString("middle_name") + " "
-                                    + rs.getString("last_name"));
-                            System.out.println("Phone: " + rs.getString("phone"));
-                            System.out.println("Email: " + rs.getString("email"));
-                            System.out.println("Gender: " + rs.getString("gender"));
-                            System.out.println("Age: " + rs.getInt("age"));
-                            b = !b;
-                            break;
+                            PreparedStatement pst = con.prepareCall(loginQuery1);
+                            pst.setString(1, inputPhone);
+                            rs1 = pst.executeQuery();
                         }
-                        else
+                        catch (Exception e)
                         {
-                            System.out.println("No user found with this phone number!");
+                            System.out.println("Error during 1 login: " + e.getMessage());
                         }
 
+                        try
+                        {
+                            PreparedStatement pst = con.prepareStatement(loginQuery);
+                            pst.setString(1, inputPhone);
+
+                            rs = pst.executeQuery();
+
+                            if (rs.next() && rs1.next() && rs1.getString(1).equals(inputPassword))
+                            {
+                                System.out.println("Login successful!");
+                                System.out.println("User Details:");
+                                System.out.println("ID: " + rs.getInt("id"));
+                                System.out.println("Name: "
+                                        + rs.getString("first_name") + " "
+                                        + rs.getString("middle_name") + " "
+                                        + rs.getString("last_name"));
+                                System.out.println("Phone: " + rs.getString("phone"));
+                                System.out.println("Email: " + rs.getString("email"));
+                                System.out.println("Gender: " + rs.getString("gender"));
+                                System.out.println("Age: " + rs.getInt("age"));
+                                b = !b;
+                                break;
+                            }
+                            else
+                            {
+                                System.out.println("No user found with this phone number!");
+                            }
+
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("Error during login: " + e.getMessage());
+                        }
+                        break;
                     }
-                    catch (Exception e)
+
+                    case 2:
                     {
-                        System.out.println("Error during login: " + e.getMessage());
+                        System.out.print("Enter email for login: ");
+                        String inputEmail = scn.nextLine();
+
+                        System.out.println("enter your password ");
+                        String inputPassword = scn.nextLine();
+
+                        String loginQuery = "SELECT * FROM user_info WHERE email = ?";
+                        String loginQuery1 = "SELECT password FROM user_info where email = ? ";
+                        ResultSet rs1 = null;
+
+                        try
+                        {
+                            PreparedStatement pst = con.prepareCall(loginQuery1);
+                            pst.setString(1, inputEmail);
+                            rs1 = pst.executeQuery();
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("Error during 1 login: " + e.getMessage());
+                        }
+
+                        try
+                        {
+                            PreparedStatement pst = con.prepareStatement(loginQuery);
+                            pst.setString(1, inputEmail);
+                            rs = pst.executeQuery();
+
+                            if (rs.next() && rs1.next() && rs1.getString(1).equals(inputPassword))
+                            {
+                                System.out.println("Login successful!");
+                                System.out.println("User Details:");
+                                System.out.println("ID: " + rs.getInt("id"));
+                                System.out.println("Name: "
+                                        + rs.getString("first_name") + " "
+                                        + rs.getString("middle_name") + " "
+                                        + rs.getString("last_name"));
+                                System.out.println("Phone: " + rs.getString("phone"));
+                                System.out.println("Email: " + rs.getString("email"));
+                                System.out.println("Gender: " + rs.getString("gender"));
+                                System.out.println("Age: " + rs.getInt("age"));
+                                b = !b;
+                                break;
+                            }
+                            else
+                            {
+                                System.out.println("No user found with this email!");
+                            }
+
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("Error during login: " + e.getMessage());
+                        }
+                        break;
                     }
+                    default:
+                    {
+                        System.out.println("enter valid input");
+                    }
+                }
+
+                if (con == null)
+                {
+                    throw new SQLException("Connection is null!");
+                }
+
+                if (b)
+                {
                     break;
                 }
+            }
+            email_for_otp = rs.getString("email");
+            OTP_verify(email_for_otp);
 
-                case 2:
+            LocalDate currentDate = LocalDate.now();
+            LocalTime currentTime = LocalTime.now();
+            try
+            {
+                // Use proper SQL syntax with placeholders
+
+                String fnm = rs.getString("first_name") + "_" +
+                        rs.getString("middle_name") + "_" +
+                        rs.getString("last_name")+"_"+
+                        rs.getInt("id");
+
+                String qq = "INSERT INTO "+fnm+" (user_name, user_last_login_date, user_last_login_time) VALUES (?, ?, ?)";
+                PreparedStatement spt = con.prepareStatement(qq);
+
+                String nm = rs.getString("first_name") + " " +
+                        rs.getString("middle_name") + " " +
+                        rs.getString("last_name");
+
+                spt.setString(1, nm);
+                spt.setDate(2, Date.valueOf(currentDate));
+                spt.setTime(3, Time.valueOf(currentTime));
+
+                if(spt.executeUpdate() > 0)
                 {
-                    System.out.print("Enter email for login: ");
-                    String inputEmail = scn.nextLine();
-
-                    System.out.println("enter your password ");
-                    String inputPassword = scn.nextLine();
-
-                    String loginQuery = "SELECT * FROM user_info WHERE email = ?";
-                    String loginQuery1 = "SELECT password FROM user_info where email = ? ";
-                    ResultSet rs1 = null;
-
-                    try
-                    {
-                        PreparedStatement pst = con.prepareCall(loginQuery1);
-                        pst.setString(1 ,inputEmail);
-                        rs1 = pst.executeQuery();
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println("Error during 1 login: " + e.getMessage());
-                    }
-
-
-                    try
-                    {
-                        PreparedStatement pst = con.prepareStatement(loginQuery);
-                        pst.setString(1, inputEmail);
-                        rs = pst.executeQuery();
-
-                        if (rs.next() && rs1.next() && rs1.getString(1).equals(inputPassword))
-                        {
-                            System.out.println("Login successful!");
-                            System.out.println("User Details:");
-                            System.out.println("    ID: " + rs.getInt("id"));
-                            System.out.println("    Name: "
-                                    + rs.getString("first_name") + " "
-                                    + rs.getString("middle_name") + " "
-                                    + rs.getString("last_name"));
-                            System.out.println("    Phone: " + rs.getString("phone"));
-                            System.out.println("    Email: " + rs.getString("email"));
-                            System.out.println("    Gender: " + rs.getString("gender"));
-                            System.out.println("    Age: " + rs.getInt("age"));
-                            b = !b;
-                            break;
-                        }
-                        else
-                        {
-                            System.out.println("No user found with this email!");
-                        }
-
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println("Error during login: " + e.getMessage());
-                    }
-                    break;
-                }
-                default:
-                {
-                    System.out.println("enter valid input");
+                    System.out.println("Time and date are saved successfully");
                 }
             }
-
-            if (con == null)
+            catch (Exception e)
             {
-                throw new SQLException("Connection is null!");
+                System.out.println("Error in saving time and date: " + e.getMessage());
+                e.printStackTrace(); // This will help you see the exact error
             }
 
-            String userName = null;
-            int rows = 0;
-            if (b) {
-                String fullKey = rs.getString("first_name") + "_"
-                        + rs.getString("middle_name") + "_"
-                        + rs.getString("last_name") + "__"
-                        + rs.getInt("id");
 
-                LocalDate date = LocalDate.now();
-                LocalTime time = LocalTime.now();
-
-                String que = "CREATE TABLE IF NOT EXISTS `" + fullKey + "` ("
-                        + "serial_no INT AUTO_INCREMENT PRIMARY KEY, "
-                        + "user_name VARCHAR(100), "
-                        + "user_last_login_date DATE, "
-                        + "user_last_login_time TIME)";
-
-                PreparedStatement pst = con.prepareStatement(que);
-                pst.executeUpdate();
-
-                String ique = "INSERT INTO `" + fullKey + "` "
-                        + "(user_name, user_last_login_date, user_last_login_time) "
-                        + "VALUES (?, ?, ?)";
-
-                PreparedStatement ipst = con.prepareStatement(ique);
-
-                userName = rs.getString("first_name") + " "
-                        + rs.getString("middle_name") + " "
-                        + rs.getString("last_name");
-
-                ipst.setString(1, userName);
-                ipst.setDate(2, Date.valueOf(date));
-                ipst.setTime(3, Time.valueOf(time));
-
-                rows = ipst.executeUpdate();
-            }
-
-            if (rows > 0)
-            {
-                System.out.println("Inserted login record for: " + userName +"\n");
-            }
-            if(b)
-                break;
         }
-        email_for_otp = rs.getString("email");
-        OTP_verify(email_for_otp);
+        else
+        {
+            System.out.println("something else in connection ");
+        }
     }
+
     static String OTP_verify(String email_for_otp)
     {
         boolean repeat_verify = true;
